@@ -64,13 +64,6 @@ function App() {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedWord, setSelectedWord] = useState(null);
   
-  // 오늘의 문장 인덱스 계산 (날짜에 따라 변경)
-  const getTodaySentenceIndex = () => {
-    const today = new Date();
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-    return dayOfYear % sentences.length;
-  };
-
   useEffect(() => {
     const today = new Date();
     setCurrentDate(today.toLocaleDateString('ko-KR', {
@@ -80,38 +73,41 @@ function App() {
     }));
   }, []);
 
-  const todaySentence = sentences[getTodaySentenceIndex()];
-
-  const handleWordClick = (word) => {
-    setSelectedWord(todaySentence.words[word]);
+  const handleWordClick = (word, sentenceWords) => {
+    setSelectedWord(sentenceWords[word]);
   };
 
   return (
     <div className="container">
-      <h1>오늘의 영어 문장</h1>
+      <h1>오늘의 영어 문장 5개</h1>
       <p className="date">{currentDate}</p>
       
-      <div className="sentence-card">
-        <p className="english">
-          {todaySentence.english.split(' ').map((word, index) => {
-            const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
-            const isImportant = todaySentence.important.includes(lowerWord);
-            return (
-              <span key={index}>
-                {isImportant ? (
-                  <span 
-                    className="highlight"
-                    onClick={() => handleWordClick(lowerWord)}
-                  >
-                    {word}
+      <div className="sentences-container">
+        {sentences.map((sentence, idx) => (
+          <div key={idx} className="sentence-card">
+            <div className="sentence-number">#{idx + 1}</div>
+            <p className="english">
+              {sentence.english.split(' ').map((word, index) => {
+                const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
+                const isImportant = sentence.important.includes(lowerWord);
+                return (
+                  <span key={index}>
+                    {isImportant ? (
+                      <span 
+                        className="highlight"
+                        onClick={() => handleWordClick(lowerWord, sentence.words)}
+                      >
+                        {word}
+                      </span>
+                    ) : word}
+                    {' '}
                   </span>
-                ) : word}
-                {' '}
-              </span>
-            );
-          })}
-        </p>
-        <p className="korean">{todaySentence.korean}</p>
+                );
+              })}
+            </p>
+            <p className="korean">{sentence.korean}</p>
+          </div>
+        ))}
       </div>
 
       {selectedWord && (
