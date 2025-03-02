@@ -181,15 +181,6 @@ h1 {
     }
 }
 
-.color-picker,
-.color-options,
-.color-option,
-.color-preview,
-.sample-text,
-.color-name {
-    display: none;
-}
-
 /* 모바일 대응 */
 @media (max-width: 768px) {
     .container {
@@ -226,21 +217,6 @@ h1 {
         transform: none;
         margin: 10px 0;
         width: 100%;
-    }
-
-    .color-picker {
-        margin: 10px;
-        padding: 15px;
-    }
-
-    .color-options {
-        gap: 10px;
-        justify-content: center;
-    }
-
-    .color-option {
-        width: calc(50% - 20px);
-        min-width: 100px;
     }
 }
 
