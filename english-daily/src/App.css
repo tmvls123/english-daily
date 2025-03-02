@@ -134,6 +134,54 @@ h1 {
     background-color: #c0392b;
 }
 
+.sentence-content {
+    position: relative;
+    padding-right: 120px;  /* 버튼 공간 확보 */
+}
+
+.speak-button {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+    min-width: 90px;
+}
+
+.speak-button:hover {
+    background-color: #2980b9;
+}
+
+.speak-button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.speak-button.playing {
+    background-color: #2ecc71;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: translateY(-50%) scale(1);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.05);
+    }
+    100% {
+        transform: translateY(-50%) scale(1);
+    }
+}
+
+/* 모바일 대응 */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -158,5 +206,16 @@ h1 {
         left: 0;
         max-width: none;
         border-radius: 10px 10px 0 0;
+    }
+
+    .sentence-content {
+        padding-right: 0;
+    }
+
+    .speak-button {
+        position: static;
+        transform: none;
+        margin: 10px 0;
+        width: 100%;
     }
 }

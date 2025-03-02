@@ -63,6 +63,7 @@ const sentences = [
 function App() {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedWord, setSelectedWord] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(null);  // 현재 재생 중인 문장 인덱스
   
   useEffect(() => {
     const today = new Date();
@@ -77,6 +78,30 @@ function App() {
     setSelectedWord(sentenceWords[word]);
   };
 
+  const speakText = (text, index) => {
+    // 이전 재생 중인 음성 중지
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;  // 약간 천천히 설정
+    
+    // 여성 음성 선택 (가능한 경우)
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(voice => 
+      voice.lang.includes('en') && voice.name.includes('Female')
+    );
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+
+    // 재생 상태 관리
+    setIsPlaying(index);
+    utterance.onend = () => setIsPlaying(null);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   return (
     <div className="container">
       <h1>오늘의 영어 문장 5개</h1>
@@ -86,26 +111,35 @@ function App() {
         {sentences.map((sentence, idx) => (
           <div key={idx} className="sentence-card">
             <div className="sentence-number">#{idx + 1}</div>
-            <p className="english">
-              {sentence.english.split(' ').map((word, index) => {
-                const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
-                const isImportant = sentence.important.includes(lowerWord);
-                return (
-                  <span key={index}>
-                    {isImportant ? (
-                      <span 
-                        className="highlight"
-                        onClick={() => handleWordClick(lowerWord, sentence.words)}
-                      >
-                        {word}
-                      </span>
-                    ) : word}
-                    {' '}
-                  </span>
-                );
-              })}
-            </p>
-            <p className="korean">{sentence.korean}</p>
+            <div className="sentence-content">
+              <p className="english">
+                {sentence.english.split(' ').map((word, index) => {
+                  const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
+                  const isImportant = sentence.important.includes(lowerWord);
+                  return (
+                    <span key={index}>
+                      {isImportant ? (
+                        <span 
+                          className="highlight"
+                          onClick={() => handleWordClick(lowerWord, sentence.words)}
+                        >
+                          {word}
+                        </span>
+                      ) : word}
+                      {' '}
+                    </span>
+                  );
+                })}
+              </p>
+              <button 
+                className={`speak-button ${isPlaying === idx ? 'playing' : ''}`}
+                onClick={() => speakText(sentence.english, idx)}
+                disabled={isPlaying !== null && isPlaying !== idx}
+              >
+                {isPlaying === idx ? '재생 중...' : '발음 듣기'}
+              </button>
+              <p className="korean">{sentence.korean}</p>
+            </div>
           </div>
         ))}
       </div>
