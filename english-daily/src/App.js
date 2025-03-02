@@ -96,67 +96,55 @@ function App() {
   const [selectedWord, setSelectedWord] = useState(null);
   const [isPlaying, setIsPlaying] = useState(null);
   const [dailySentences, setDailySentences] = useState([]);
+  const [activeTab, setActiveTab] = useState('sentences'); // 'sentences' or 'quiz'
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [showQuizResults, setShowQuizResults] = useState(false);
   
   useEffect(() => {
-    // 현재 날짜 설정
-    const updateDate = () => {
+    const loadTodaysSentences = () => {
       const now = new Date();
-      setCurrentDate(now.toLocaleDateString('ko-KR', {
+      const dateString = now.toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      }));
-      return now;
-    };
+      });
+      setCurrentDate(dateString);
 
-    // 오늘의 문장 선택
-    const selectDailySentences = (date) => {
-      const seed = date.getFullYear() * 10000 + 
-                  (date.getMonth() + 1) * 100 + 
-                  date.getDate();
+      // 날짜 기반 시드 생성
+      const seed = now.getFullYear() * 10000 + 
+                  (now.getMonth() + 1) * 100 + 
+                  now.getDate();
       
-      // Fisher-Yates 셔플 알고리즘
+      // Fisher-Yates 셔플
       const shuffled = [...allSentences];
-      let currentIndex = shuffled.length;
-      let temporaryValue, randomIndex;
-      
-      // seed를 사용하여 일관된 랜덤 값 생성
-      const random = () => {
-        const x = Math.sin(seed + currentIndex) * 10000;
-        return x - Math.floor(x);
-      };
-
-      while (currentIndex !== 0) {
-        randomIndex = Math.floor(random() * currentIndex);
-        currentIndex -= 1;
-        temporaryValue = shuffled[currentIndex];
-        shuffled[currentIndex] = shuffled[randomIndex];
-        shuffled[randomIndex] = temporaryValue;
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(((Math.sin(seed + i) * 10000) % 1) * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      setDailySentences(shuffled.slice(0, 5));
+      const selected = shuffled.slice(0, 5);
+      setDailySentences(selected);
+
+      // 퀴즈 답변 초기화
+      const initialAnswers = {};
+      selected.forEach((sentence, idx) => {
+        const word = sentence.important[Math.floor(Math.random() * sentence.important.length)];
+        initialAnswers[idx] = { word: word, answer: '' };
+      });
+      setQuizAnswers(initialAnswers);
     };
 
-    // 초기 설정
-    const now = updateDate();
-    selectDailySentences(now);
+    loadTodaysSentences();
 
-    // 자정에 업데이트하는 타이머 설정
-    const setUpdateTimer = () => {
-      const now = new Date();
-      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      const timeUntilMidnight = tomorrow - now;
+    // 자정에 업데이트
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const timeUntilMidnight = tomorrow - now;
 
-      return setTimeout(() => {
-        const newDate = updateDate();
-        selectDailySentences(newDate);
-        setUpdateTimer(); // 다음 날을 위해 타이머 재설정
-      }, timeUntilMidnight);
-    };
+    const timerId = setTimeout(() => {
+      loadTodaysSentences();
+    }, timeUntilMidnight);
 
-    const timerId = setUpdateTimer();
-
-    // 컴포넌트 언마운트 시 타이머 정리
     return () => clearTimeout(timerId);
   }, []);
 
@@ -183,47 +171,140 @@ function App() {
     window.speechSynthesis.speak(utterance);
   };
 
+  const handleQuizAnswer = (index, answer) => {
+    setQuizAnswers(prev => ({
+      ...prev,
+      [index]: { ...prev[index], answer: answer }
+    }));
+  };
+
+  const checkQuizAnswers = () => {
+    setShowQuizResults(true);
+  };
+
+  const resetQuiz = () => {
+    setShowQuizResults(false);
+    const newAnswers = { ...quizAnswers };
+    Object.keys(newAnswers).forEach(key => {
+      newAnswers[key].answer = '';
+    });
+    setQuizAnswers(newAnswers);
+  };
+
   return (
     <div className="container">
       <h1>오늘의 영어 문장 5개</h1>
       <p className="date">{currentDate}</p>
-      
-      <div className="sentences-container">
-        {dailySentences.map((sentence, idx) => (
-          <div key={idx} className="sentence-card">
-            <div className="sentence-number">#{idx + 1}</div>
-            <div className="sentence-content">
-              <p className="english">
-                {sentence.english.split(' ').map((word, index) => {
-                  const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
-                  const isImportant = sentence.important.includes(lowerWord);
-                  return (
-                    <span key={index}>
-                      {isImportant ? (
-                        <span 
-                          className="highlight"
-                          onClick={() => handleWordClick(lowerWord, sentence.words)}
-                        >
-                          {word}
-                        </span>
-                      ) : word}
-                      {' '}
-                    </span>
-                  );
-                })}
-              </p>
-              <button 
-                className={`speak-button ${isPlaying === idx ? 'playing' : ''}`}
-                onClick={() => speakText(sentence.english, idx)}
-                disabled={isPlaying !== null && isPlaying !== idx}
-              >
-                {isPlaying === idx ? '재생 중...' : '발음 듣기'}
-              </button>
-              <p className="korean">{sentence.korean}</p>
-            </div>
-          </div>
-        ))}
+
+      <div className="tabs">
+        <button 
+          className={`tab-button ${activeTab === 'sentences' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sentences')}
+        >
+          문장 학습
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'quiz' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('quiz');
+            setShowQuizResults(false);
+          }}
+        >
+          빈칸 퀴즈
+        </button>
       </div>
+      
+      {activeTab === 'sentences' ? (
+        <div className="sentences-container">
+          {dailySentences.map((sentence, idx) => (
+            <div key={idx} className="sentence-card">
+              <div className="sentence-number">#{idx + 1}</div>
+              <div className="sentence-content">
+                <p className="english">
+                  {sentence.english.split(' ').map((word, index) => {
+                    const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
+                    const isImportant = sentence.important.includes(lowerWord);
+                    return (
+                      <span key={index}>
+                        {isImportant ? (
+                          <span 
+                            className="highlight"
+                            onClick={() => handleWordClick(lowerWord, sentence.words)}
+                          >
+                            {word}
+                          </span>
+                        ) : word}
+                        {' '}
+                      </span>
+                    );
+                  })}
+                </p>
+                <button 
+                  className={`speak-button ${isPlaying === idx ? 'playing' : ''}`}
+                  onClick={() => speakText(sentence.english, idx)}
+                  disabled={isPlaying !== null && isPlaying !== idx}
+                >
+                  {isPlaying === idx ? '재생 중...' : '발음 듣기'}
+                </button>
+                <p className="korean">{sentence.korean}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="quiz-container">
+          {dailySentences.map((sentence, idx) => {
+            const quizWord = quizAnswers[idx]?.word;
+            const userAnswer = quizAnswers[idx]?.answer;
+            const words = sentence.english.split(' ');
+            const isCorrect = showQuizResults && 
+              userAnswer.toLowerCase() === quizWord.toLowerCase();
+            
+            return (
+              <div key={idx} className="quiz-card">
+                <div className="sentence-number">#{idx + 1}</div>
+                <div className="quiz-content">
+                  <p className="english">
+                    {words.map((word, index) => {
+                      const lowerWord = word.replace(/[.,!?:;]/g, '').toLowerCase();
+                      return (
+                        <span key={index}>
+                          {lowerWord === quizWord.toLowerCase() ? (
+                            <input
+                              type="text"
+                              className={`quiz-input ${showQuizResults ? (isCorrect ? 'correct' : 'incorrect') : ''}`}
+                              value={userAnswer}
+                              onChange={(e) => handleQuizAnswer(idx, e.target.value)}
+                              disabled={showQuizResults}
+                              placeholder="빈칸 채우기"
+                            />
+                          ) : word}
+                          {' '}
+                        </span>
+                      );
+                    })}
+                  </p>
+                  {showQuizResults && !isCorrect && (
+                    <p className="correct-answer">정답: {quizWord}</p>
+                  )}
+                  <p className="korean">{sentence.korean}</p>
+                </div>
+              </div>
+            );
+          })}
+          <div className="quiz-buttons">
+            {!showQuizResults ? (
+              <button className="check-button" onClick={checkQuizAnswers}>
+                정답 확인하기
+              </button>
+            ) : (
+              <button className="retry-button" onClick={resetQuiz}>
+                다시 풀기
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {selectedWord && (
         <div className="word-explanation">
