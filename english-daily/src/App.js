@@ -94,18 +94,16 @@ const allSentences = [
 function App() {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedWord, setSelectedWord] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(null);
   const [dailySentences, setDailySentences] = useState([]);
-  
+
   useEffect(() => {
     const loadTodaysSentences = () => {
       const now = new Date();
-      const dateString = now.toLocaleDateString('ko-KR', {
+      setCurrentDate(now.toLocaleDateString('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      });
-      setCurrentDate(dateString);
+      }));
 
       // 날짜 기반 시드 생성
       const seed = now.getFullYear() * 10000 + 
@@ -129,34 +127,12 @@ function App() {
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const timeUntilMidnight = tomorrow - now;
 
-    const timerId = setTimeout(() => {
-      loadTodaysSentences();
-    }, timeUntilMidnight);
-
+    const timerId = setTimeout(loadTodaysSentences, timeUntilMidnight);
     return () => clearTimeout(timerId);
   }, []);
 
   const handleWordClick = (word, sentenceWords) => {
     setSelectedWord(sentenceWords[word]);
-  };
-
-  const speakText = (text, index) => {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(voice => 
-      voice.lang.includes('en') && voice.name.includes('Female')
-    );
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
-
-    setIsPlaying(index);
-    utterance.onend = () => setIsPlaying(null);
-    window.speechSynthesis.speak(utterance);
   };
 
   return (
@@ -188,13 +164,6 @@ function App() {
                   );
                 })}
               </p>
-              <button 
-                className={`speak-button ${isPlaying === idx ? 'playing' : ''}`}
-                onClick={() => speakText(sentence.english, idx)}
-                disabled={isPlaying !== null && isPlaying !== idx}
-              >
-                {isPlaying === idx ? '재생 중...' : '발음 듣기'}
-              </button>
               <p className="korean">{sentence.korean}</p>
             </div>
           </div>
