@@ -60,10 +60,20 @@ const sentences = [
   }
 ];
 
+// 하이라이트 색상 옵션
+const highlightColors = [
+  { id: 'yellow', name: '노란색', background: '#fff9c4', hoverBackground: '#fff176' },
+  { id: 'green', name: '초록색', background: '#c8e6c9', hoverBackground: '#a5d6a7' },
+  { id: 'blue', name: '파란색', background: '#bbdefb', hoverBackground: '#90caf9' },
+  { id: 'pink', name: '분홍색', background: '#f8bbd0', hoverBackground: '#f48fb1' },
+  { id: 'purple', name: '보라색', background: '#e1bee7', hoverBackground: '#ce93d8' }
+];
+
 function App() {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedWord, setSelectedWord] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(null);  // 현재 재생 중인 문장 인덱스
+  const [isPlaying, setIsPlaying] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(highlightColors[0]);
   
   useEffect(() => {
     const today = new Date();
@@ -107,6 +117,30 @@ function App() {
       <h1>오늘의 영어 문장 5개</h1>
       <p className="date">{currentDate}</p>
       
+      <div className="color-picker">
+        <h3>하이라이트 색상 선택</h3>
+        <div className="color-options">
+          {highlightColors.map(color => (
+            <div
+              key={color.id}
+              className={`color-option ${selectedColor.id === color.id ? 'selected' : ''}`}
+              style={{
+                backgroundColor: color.background,
+                borderColor: selectedColor.id === color.id ? color.hoverBackground : 'transparent'
+              }}
+              onClick={() => setSelectedColor(color)}
+            >
+              <div className="color-preview">
+                <span className="sample-text" style={{ backgroundColor: color.background }}>
+                  Sample
+                </span>
+              </div>
+              <span className="color-name">{color.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
       <div className="sentences-container">
         {sentences.map((sentence, idx) => (
           <div key={idx} className="sentence-card">
@@ -121,6 +155,10 @@ function App() {
                       {isImportant ? (
                         <span 
                           className="highlight"
+                          style={{
+                            backgroundColor: selectedColor.background,
+                            '--hover-color': selectedColor.hoverBackground
+                          }}
                           onClick={() => handleWordClick(lowerWord, sentence.words)}
                         >
                           {word}
