@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/english-daily/static/css/main.41eb0da8.css",
-    "main.js": "/english-daily/static/js/main.a7a36451.js",
+    "main.js": "/english-daily/static/js/main.db9a6a89.js",
     "static/js/453.ab396185.chunk.js": "/english-daily/static/js/453.ab396185.chunk.js",
     "index.html": "/english-daily/index.html",
     "main.41eb0da8.css.map": "/english-daily/static/css/main.41eb0da8.css.map",
-    "main.a7a36451.js.map": "/english-daily/static/js/main.a7a36451.js.map",
+    "main.db9a6a89.js.map": "/english-daily/static/js/main.db9a6a89.js.map",
     "453.ab396185.chunk.js.map": "/english-daily/static/js/453.ab396185.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.41eb0da8.css",
-    "static/js/main.a7a36451.js"
+    "static/js/main.db9a6a89.js"
   ]
 }
