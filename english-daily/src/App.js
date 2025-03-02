@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// 영어 문장 데이터베이스
-const sentences = [
+// 전체 영어 문장 데이터베이스
+const allSentences = [
   {
     english: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
     korean: "성공이 끝이 아니며 실패가 치명적이지 않습니다: 중요한 것은 계속할 용기입니다.",
@@ -57,31 +57,107 @@ const sentences = [
       "life": "삶, 인생",
       "itself": "그 자체"
     }
+  },
+  // 추가 문장들...
+  {
+    english: "The best way to predict the future is to create it.",
+    korean: "미래를 예측하는 가장 좋은 방법은 그것을 만드는 것입니다.",
+    important: ["predict", "future", "create"],
+    words: {
+      "predict": "예측하다",
+      "future": "미래",
+      "create": "만들다, 창조하다"
+    }
+  },
+  {
+    english: "Every moment is a fresh beginning.",
+    korean: "모든 순간은 새로운 시작입니다.",
+    important: ["moment", "fresh", "beginning"],
+    words: {
+      "moment": "순간",
+      "fresh": "새로운",
+      "beginning": "시작"
+    }
+  },
+  {
+    english: "Change your thoughts and you change your world.",
+    korean: "생각을 바꾸면 당신의 세상이 바뀝니다.",
+    important: ["change", "thoughts", "world"],
+    words: {
+      "change": "바꾸다, 변화시키다",
+      "thoughts": "생각들",
+      "world": "세상"
+    }
   }
-];
-
-// 하이라이트 색상 옵션
-const highlightColors = [
-  { id: 'yellow', name: '노란색', background: '#fff9c4', hoverBackground: '#fff176' },
-  { id: 'green', name: '초록색', background: '#c8e6c9', hoverBackground: '#a5d6a7' },
-  { id: 'blue', name: '파란색', background: '#bbdefb', hoverBackground: '#90caf9' },
-  { id: 'pink', name: '분홍색', background: '#f8bbd0', hoverBackground: '#f48fb1' },
-  { id: 'purple', name: '보라색', background: '#e1bee7', hoverBackground: '#ce93d8' }
 ];
 
 function App() {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedWord, setSelectedWord] = useState(null);
   const [isPlaying, setIsPlaying] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(highlightColors[0]);
+  const [dailySentences, setDailySentences] = useState([]);
   
   useEffect(() => {
-    const today = new Date();
-    setCurrentDate(today.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }));
+    // 현재 날짜 설정
+    const updateDate = () => {
+      const now = new Date();
+      setCurrentDate(now.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }));
+      return now;
+    };
+
+    // 오늘의 문장 선택
+    const selectDailySentences = (date) => {
+      const seed = date.getFullYear() * 10000 + 
+                  (date.getMonth() + 1) * 100 + 
+                  date.getDate();
+      
+      // Fisher-Yates 셔플 알고리즘
+      const shuffled = [...allSentences];
+      let currentIndex = shuffled.length;
+      let temporaryValue, randomIndex;
+      
+      // seed를 사용하여 일관된 랜덤 값 생성
+      const random = () => {
+        const x = Math.sin(seed + currentIndex) * 10000;
+        return x - Math.floor(x);
+      };
+
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = shuffled[currentIndex];
+        shuffled[currentIndex] = shuffled[randomIndex];
+        shuffled[randomIndex] = temporaryValue;
+      }
+
+      setDailySentences(shuffled.slice(0, 5));
+    };
+
+    // 초기 설정
+    const now = updateDate();
+    selectDailySentences(now);
+
+    // 자정에 업데이트하는 타이머 설정
+    const setUpdateTimer = () => {
+      const now = new Date();
+      const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const timeUntilMidnight = tomorrow - now;
+
+      return setTimeout(() => {
+        const newDate = updateDate();
+        selectDailySentences(newDate);
+        setUpdateTimer(); // 다음 날을 위해 타이머 재설정
+      }, timeUntilMidnight);
+    };
+
+    const timerId = setUpdateTimer();
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => clearTimeout(timerId);
   }, []);
 
   const handleWordClick = (word, sentenceWords) => {
@@ -89,14 +165,11 @@ function App() {
   };
 
   const speakText = (text, index) => {
-    // 이전 재생 중인 음성 중지
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    utterance.rate = 0.9;  // 약간 천천히 설정
+    utterance.rate = 0.9;
     
-    // 여성 음성 선택 (가능한 경우)
     const voices = window.speechSynthesis.getVoices();
     const femaleVoice = voices.find(voice => 
       voice.lang.includes('en') && voice.name.includes('Female')
@@ -105,10 +178,8 @@ function App() {
       utterance.voice = femaleVoice;
     }
 
-    // 재생 상태 관리
     setIsPlaying(index);
     utterance.onend = () => setIsPlaying(null);
-
     window.speechSynthesis.speak(utterance);
   };
 
@@ -117,32 +188,8 @@ function App() {
       <h1>오늘의 영어 문장 5개</h1>
       <p className="date">{currentDate}</p>
       
-      <div className="color-picker">
-        <h3>하이라이트 색상 선택</h3>
-        <div className="color-options">
-          {highlightColors.map(color => (
-            <div
-              key={color.id}
-              className={`color-option ${selectedColor.id === color.id ? 'selected' : ''}`}
-              style={{
-                backgroundColor: color.background,
-                borderColor: selectedColor.id === color.id ? color.hoverBackground : 'transparent'
-              }}
-              onClick={() => setSelectedColor(color)}
-            >
-              <div className="color-preview">
-                <span className="sample-text" style={{ backgroundColor: color.background }}>
-                  Sample
-                </span>
-              </div>
-              <span className="color-name">{color.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      
       <div className="sentences-container">
-        {sentences.map((sentence, idx) => (
+        {dailySentences.map((sentence, idx) => (
           <div key={idx} className="sentence-card">
             <div className="sentence-number">#{idx + 1}</div>
             <div className="sentence-content">
@@ -155,10 +202,6 @@ function App() {
                       {isImportant ? (
                         <span 
                           className="highlight"
-                          style={{
-                            backgroundColor: selectedColor.background,
-                            '--hover-color': selectedColor.hoverBackground
-                          }}
                           onClick={() => handleWordClick(lowerWord, sentence.words)}
                         >
                           {word}
