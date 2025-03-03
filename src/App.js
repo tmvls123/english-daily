@@ -280,7 +280,7 @@ function App() {
 
       {selectedWord && (
         <div className="word-explanation">
-          <h3>단어 설명</h3>
+          <h3>단어 의미</h3>
           <p>{selectedWord}</p>
           <button onClick={() => setSelectedWord(null)}>닫기</button>
         </div>
