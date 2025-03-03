@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "매일의 영어",
+  "name": "매일의 영어 문장 학습 앱",
   "icons": [
     {
       "src": "favicon.ico",
